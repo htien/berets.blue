@@ -1,0 +1,16 @@
+/.idea
+/.settings
+/nbproject
+/node_modules
+/public/storage
+/public/.htaccess
+/storage/*.key
+/vendor
+
+Homestead.json
+Homestead.yaml
+.env
+
+.ftpquota
+.buildpath
+.project
