@@ -1,0 +1,20 @@
+# humanstxt.org/
+# The humans responsible & technology colophon
+
+# TEAM
+
+    Developer      : Tien Nguyen
+    Contact        : tien [at] thichlinux.net
+    Site           : https://tnguyen.net
+    Skype          : berets.blue
+    Twitter        : @nvhtien
+    Google+        : https://google.com/+TienNguyenInHeaven
+    Location       : Nha Trang, Vietnam
+
+# SITE
+
+    Last update    : 2014/03/31
+    Language       : English / Vietnamese
+    Standards      : HTML5, CSS3
+    Components     : Modernizr, jQuery, etc.
+    Software       : PhpStorm, Sublime Text, FileZilla, Photoshop
