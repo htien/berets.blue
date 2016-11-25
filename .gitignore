@@ -2,7 +2,6 @@
 /.settings
 /nbproject
 /node_modules
-/public/node_modules
 /public/storage
 /storage/*.key
 /vendor

@@ -6,11 +6,11 @@
     RewriteEngine On
 
     # Redirect To Another Domain.
-    #RewriteRule ^ https://<ENTER_YOUR_DOMAIN>%{REQUEST_URI} [L,R=302]
+    #RewriteRule ^ https://<ENTER_YOUR_DOMAIN>%{REQUEST_URI} [L,R=301]
 
     # Redirect Trailing Slashes If Not A Folder...
     RewriteCond %{REQUEST_FILENAME} !-d
-    RewriteRule ^(.*)/$ /$1 [L,R=302]
+    RewriteRule ^(.*)/$ /$1 [L,R=301]
 
     # Block access to "hidden" directories whose names begin with a period. This
     # includes directories used by version control systems such as Subversion or
@@ -102,6 +102,7 @@ AddEncoding gzip svgz
 
     Header unset ETag
     Header unset Last-Modified
+    Header unset X-Powered-By
 
     <FilesMatch "(\.js\.gz|\.css\.gz)$">
         # Serve correct encoding type.
@@ -109,8 +110,4 @@ AddEncoding gzip svgz
         # Force proxies to cache gzipped & non-gzipped css/js files separately.
         Header append Vary Accept-Encoding
     </FilesMatch>
-</IfModule>
-
-<IfModule mod_headers.c>
-    Header unset X-Powered-By
 </IfModule>
