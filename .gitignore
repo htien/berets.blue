@@ -2,15 +2,22 @@
 /.settings
 /nbproject
 /node_modules
+/public/.well-known
 /public/storage
 /storage/*.key
 /vendor
 /*.zip
 
-Homestead.json
-Homestead.yaml
+/public/a
+
 .env
 
 .ftpquota
 .buildpath
 .project
+
+composer.phar
+
+Homestead.json
+Homestead.yaml
+

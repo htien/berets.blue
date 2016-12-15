@@ -1,63 +1,16 @@
-<IfModule mod_rewrite.c>
-    <IfModule mod_negotiation.c>
-        Options -MultiViews
-    </IfModule>
-
-    RewriteEngine On
-
-    # Redirect To Another Domain.
-    #RewriteRule ^ https://<ENTER_YOUR_DOMAIN>%{REQUEST_URI} [L,R=301]
-
-    # Redirect Trailing Slashes If Not A Folder...
-    RewriteCond %{REQUEST_FILENAME} !-d
-    RewriteRule ^(.*)/$ /$1 [L,R=301]
-
-    # Block access to "hidden" directories whose names begin with a period. This
-    # includes directories used by version control systems such as Subversion or
-    # Git to store control files. Files whose names begin with a period, as well
-    # as the control files used by CVS, are protected by the FilesMatch directive
-    # above.
-    #
-    # NOTE: This only works when mod_rewrite is loaded. Without mod_rewrite, it is
-    # not possible to block access to entire directories from .htaccess because
-    # <DirectoryMatch> is not allowed here.
-    #
-    # If you do not have mod_rewrite installed, you should remove these
-    # directories from your webroot or otherwise protect them from being
-    # downloaded.
-    RewriteRule "(^|/)\.(?!well-known)" - [F]
-
-    # Redirect http to https and www to non www.
-    RewriteCond %{HTTPS} off
-    RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301,NC]
-
-    RewriteCond %{HTTP_HOST} ^www\.(.+)$ [NC]
-    RewriteRule ^ https://%1%{REQUEST_URI} [L,R=301]
-
-    # Handle Front Controller...
-    RewriteCond %{REQUEST_FILENAME} !-d
-    RewriteCond %{REQUEST_FILENAME} !-f
-    RewriteCond %{REQUEST_URI} !=/favicon.ico
-    RewriteRule ^ index.php [L]
-
-    # Handle Authorization Header
-    RewriteCond %{HTTP:Authorization} .
-    RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
-</IfModule>
-
-## Disable if using CloudFlare instead.
-# Various header fixes.
-# <IfModule mod_headers.c>
-#     # Disable content sniffing, since it's an attack vector.
-#     Header always set X-Content-Type-Options nosniff
-#     # Disable Proxy header, since it's an attack vector.
-#     RequestHeader unset Proxy
-# </IfModule>
-
-
 #
-# Custom settings
+# Apache/PHP settings:
 #
+
+# Protect files and directories from prying eyes.
+<FilesMatch "\.(inc|make|module|profile|po|sh|.*sql|theme|twig|tpl(\.php)?|xtmpl|yml)(~|\.sw[op]|\.bak|\.orig|\.save)?$|^(\.(?!well-known).*|composer\.(json|lock))$|^#.*#$|\.php(~|\.sw[op]|\.bak|\.orig|\.save)$">
+  <IfModule mod_authz_core.c>
+    Require all denied
+  </IfModule>
+  <IfModule !mod_authz_core.c>
+    Order allow,deny
+  </IfModule>
+</FilesMatch>
 
 # Don't show directory listings for URLs which map to a directory.
 Options -Indexes
@@ -68,46 +21,145 @@ Options +FollowSymLinks
 # Set the default handler.
 DirectoryIndex index.php index.html index.htm
 
-# Associate .js with "text/javascript" type (if not present in mime.conf)
-AddType text/javascript .js
-
 # Add correct encoding for SVGZ.
 AddType image/svg+xml svg svgz
 AddEncoding gzip svgz
 
+# Associate .js with "text/javascript" type (if not present in mime.conf)
+AddType text/javascript .js
+
 # Requires mod_expires to be enabled.
 <IfModule mod_expires.c>
-    # Enable expirations.
-    ExpiresActive On
+  # Enable expirations.
+  ExpiresActive On
 
-    ExpiresDefault "access plus 1 seconds"
-    ExpiresByType image/x-icon "access plus 2692000 seconds"
-    ExpiresByType image/jpeg "access plus 2692000 seconds"
-    ExpiresByType image/png "access plus 2692000 seconds"
-    ExpiresByType image/gif "access plus 2692000 seconds"
-    ExpiresByType application/x-shockwave-flash "access plus 2692000 seconds"
-    ExpiresByType text/css "access plus 2692000 seconds"
-    ExpiresByType text/javascript "access plus 2692000 seconds"
-    ExpiresByType application/x-javascript "access plus 2692000 seconds"
-    ExpiresByType text/html "access plus 600 seconds"
-    ExpiresByType application/xhtml+xml "access plus 600 seconds"
+  # Cache all files for 2 weeks after access (A).
+  ExpiresDefault A1209600
+
+  <FilesMatch \.php$>
+    # Do not allow PHP scripts to be cached unless they explicitly send cache
+    # headers themselves. Otherwise all scripts would have to overwrite the
+    # headers set by mod_expires if they want another caching behavior. This may
+    # fail if an error occurs early in the bootstrap process, and it may cause
+    # problems if a non-Drupal PHP file is installed in a subdirectory.
+    ExpiresActive Off
+  </FilesMatch>
 </IfModule>
 
-# Rules to correctly serve gzip compressed CSS and JS files.
-# Requires both mod_rewrite and mod_headers to be enabled.
-<IfModule mod_headers.c>
-    Header set Cache-Control "max-age=2692000, public"
+# Various rewrite rules.
+<IfModule mod_rewrite.c>
+  <IfModule mod_negotiation.c>
+    Options -MultiViews
+  </IfModule>
 
-    Header set Cache-Control "max-age=600, private, must-revalidate"
+  RewriteEngine On
 
-    Header unset ETag
-    Header unset Last-Modified
-    Header unset X-Powered-By
+  # Redirect HTTP to HTTPS.
+  RewriteCond %{HTTPS} off
+  RewriteCond %{REQUEST_URI} !^/\.well-known(/|$)
+  RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301,NC]
+
+  # Set "protossl" to "s" if we were accessed via https://.  This is used later
+  # if you enable "www." stripping or enforcement, in order to ensure that
+  # you don't bounce between http and https.
+  RewriteRule ^ - [E=protossl]
+  RewriteCond %{HTTPS} on
+  RewriteRule ^ - [E=protossl:s]
+
+  # Make sure Authorization HTTP header is available to PHP
+  # even when running as CGI or FastCGI.
+  RewriteRule ^ - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+
+  # Block access to "hidden" directories whose names begin with a period. This
+  # includes directories used by version control systems such as Subversion or
+  # Git to store control files. Files whose names begin with a period, as well
+  # as the control files used by CVS, are protected by the FilesMatch directive
+  # above.
+  #
+  # NOTE: This only works when mod_rewrite is loaded. Without mod_rewrite, it is
+  # not possible to block access to entire directories from .htaccess because
+  # <DirectoryMatch> is not allowed here.
+  #
+  # If you do not have mod_rewrite installed, you should remove these
+  # directories from your webroot or otherwise protect them from being
+  # downloaded.
+  RewriteRule "(^|\/)\.(?!well-known)" - [F]
+
+  # If your site can be accessed both with and without the 'www.' prefix, you
+  # can use one of the following settings to redirect users to your preferred
+  # URL, either WITH or WITHOUT the 'www.' prefix. Choose ONLY one option:
+
+  # To redirect all users to access the site WITH the 'www.' prefix,
+  # (http://example.com/foo will be redirected to http://www.example.com/foo)
+  # uncomment the following:
+  # RewriteCond %{HTTP_HOST} .
+  # RewriteCond %{HTTP_HOST} !^www\. [NC]
+  # RewriteRule ^ http%{ENV:protossl}://www.%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+  # To redirect all users to access the site WITHOUT the 'www.' prefix,
+  # (http://www.example.com/foo will be redirected to http://example.com/foo)
+  # uncomment the following:
+  RewriteCond %{HTTP_HOST} ^www\.(.+)$ [NC]
+  RewriteRule ^ http%{ENV:protossl}://%1%{REQUEST_URI} [L,R=301]
+
+  # REDIRECT TO ANOTHER DOMAIN.
+  #RewriteRule ^ https://<ENTER_YOUR_DOMAIN>%{REQUEST_URI} [L,R=301]
+
+  # Redirect trailing slashes if not a folder...
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteRule ^(.*)/$ /$1 [L,R=301]
+
+  # Pass all requests not referring directly to files in the filesystem to
+  # index.php.
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteCond %{REQUEST_URI} !=/favicon.ico
+  RewriteRule ^ index.php [L]
+
+  # Rules to correctly serve gzip compressed CSS and JS files.
+  # Requires both mod_rewrite and mod_headers to be enabled.
+  <IfModule mod_headers.c>
+    # Serve gzip compressed CSS files if they exist and the client accepts gzip.
+    RewriteCond %{HTTP:Accept-encoding} gzip
+    RewriteCond %{REQUEST_FILENAME}\.gz -s
+    RewriteRule ^(.*)\.css $1\.css\.gz [QSA]
+
+    # Serve gzip compressed JS files if they exist and the client accepts gzip.
+    RewriteCond %{HTTP:Accept-encoding} gzip
+    RewriteCond %{REQUEST_FILENAME}\.gz -s
+    RewriteRule ^(.*)\.js $1\.js\.gz [QSA]
+
+    # Serve correct content types, and prevent mod_deflate double gzip.
+    RewriteRule \.css\.gz$ - [T=text/css,E=no-gzip:1]
+    RewriteRule \.js\.gz$ - [T=text/javascript,E=no-gzip:1]
 
     <FilesMatch "(\.js\.gz|\.css\.gz)$">
-        # Serve correct encoding type.
-        Header set Content-Encoding gzip
-        # Force proxies to cache gzipped & non-gzipped css/js files separately.
-        Header append Vary Accept-Encoding
+      # Serve correct encoding type.
+      Header set Content-Encoding gzip
+      # Force proxies to cache gzipped & non-gzipped css/js files separately.
+      Header append Vary Accept-Encoding
     </FilesMatch>
+  </IfModule>
+</IfModule>
+
+# Disable if using CloudFlare instead.
+# Various header fixes.
+# <IfModule mod_headers.c>
+#   # Disable content sniffing, since it's an attack vector.
+#   Header always set X-Content-Type-Options nosniff
+#   # Disable Proxy header, since it's an attack vector.
+#   RequestHeader unset Proxy
+# </IfModule>
+
+#
+# Custom
+#
+
+<IfModule mod_headers.c>
+  Header set Cache-Control "max-age=2692000, public"
+  Header set Cache-Control "max-age=600, private, must-revalidate"
+
+  Header unset ETag
+  Header unset Last-Modified
+  Header unset X-Powered-By
 </IfModule>
