@@ -23,6 +23,7 @@
 <title itemprop="name">Tien Nguyen &mdash; Official Personal Site &ndash; T.N.</title>
 <meta name="description" content="Trang web cá nhân của Hoàng Tiến. Nơi chia sẻ kiến thức, kinh nghiệm của tôi về CNTT. Nơi trao đổi, bàn luận các chủ đề tự do liên quan một số lĩnh vực :)" />
 <meta name="keywords" content="nguyễn vũ hoàng tiến, tiến nguyễn, công nghệ thông tin, kiến thức, kinh nghiệm, thủ thuật, trao đổi, việc làm, học vấn, học hỏi, công nghệ, lập trình, blog cá nhân, web cá nhân, profile, photo, tự do, bảo mật, ngôn ngữ, php, java, javascript, html5, git, internet, security, hacking, vietnam, viet nam" />
+<meta name="robots" content="noodp,noydir" />
 
 {{-- Metadata: Open Graph/Facebook --}}
 
